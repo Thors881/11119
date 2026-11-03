@@ -1,0 +1,933 @@
+<title>Гурван фазын од холбоо</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600&family=Noto+Sans+Mono:wght@400;500;600&subset=cyrillic,cyrillic-ext&display=swap">
+<style>
+/* Layout: blueprint drawing sheet. Schematic and phasors on the left, controls and instrument readouts on the right, waveform plot full width below; on phones everything stacks in reading order. Phases use the standard colors: L1 yellow, L2 green, L3 red. */
+:root {
+  --bg: #E8EEF5;
+  --grid: rgba(18, 56, 102, 0.07);
+  --paper: #F7F9FC;
+  --ink: #10263F;
+  --muted: #51667D;
+  --line: #C3D0DF;
+  --accent: #1A62C9;
+  --on-accent: #FFFFFF;
+  --l1: #946D00;
+  --l2: #2A8A57;
+  --l3: #C73E2E;
+  --warn: #B42318;
+  --warn-bg: #FDECEA;
+  --info-bg: #E3EEFA;
+  --glass: #0C2036;
+  --glass-ink: #E3F0FF;
+  --glass-dim: #8AA3C2;
+  --lamp: #F4BE3A;
+  --font-head: 'Noto Sans', 'Segoe UI', Arial, system-ui, sans-serif;
+  --font-ui: 'Noto Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'Noto Sans Mono', 'Menlo', 'Consolas', 'DejaVu Sans Mono', monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0B2038; --grid: rgba(140, 190, 255, 0.07); --paper: #112C4A; --ink: #E7F0FB; --muted: #9DB4CE;
+    --line: #244B73; --accent: #7DB6FF; --on-accent: #0B2038; --l1: #F2C230; --l2: #5ED08C; --l3: #FF7C6B;
+    --warn: #FF9A8B; --warn-bg: #3A1F25; --info-bg: #173A5E; --glass: #07131F; --glass-ink: #E3F0FF;
+    --glass-dim: #8AA3C2; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0B2038; --grid: rgba(140, 190, 255, 0.07); --paper: #112C4A; --ink: #E7F0FB; --muted: #9DB4CE;
+  --line: #244B73; --accent: #7DB6FF; --on-accent: #0B2038; --l1: #F2C230; --l2: #5ED08C; --l3: #FF7C6B;
+  --warn: #FF9A8B; --warn-bg: #3A1F25; --info-bg: #173A5E; --glass: #07131F; --glass-ink: #E3F0FF;
+  --glass-dim: #8AA3C2; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background-color: var(--bg);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 24px 24px;
+  color: var(--ink); font-family: var(--font-ui); font-size: 15px; line-height: 1.55;
+  padding-block: 28px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1160px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+.head { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; flex-wrap: wrap; }
+.head > div { min-width: 0; }
+.kicker { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin: 0 0 6px; }
+h1 { font-family: var(--font-head); font-size: 36px; line-height: 1.1; font-weight: 600; margin: 0 0 8px; text-wrap: balance; }
+.lede { margin: 0; max-width: 62ch; color: var(--muted); }
+.tblock { border: 1px solid var(--ink); background: var(--paper); font-family: var(--font-mono); font-size: 12px; display: grid; grid-template-columns: auto auto; min-width: 0; }
+.tblock span { padding: 5px 10px; border-bottom: 1px solid var(--line); }
+.tblock span:nth-child(odd) { color: var(--muted); border-right: 1px solid var(--line); }
+.tblock span:nth-last-child(-n+2) { border-bottom: 0; }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; counter-reset: s; }
+.steps li { counter-increment: s; display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; font-size: 14px; }
+.steps li::before { content: counter(s); font-family: var(--font-mono); font-weight: 500; width: 28px; height: 28px; border: 1.5px solid var(--accent); color: var(--accent); display: grid; place-items: center; border-radius: 50%; }
+.grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.col { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+@media (max-width: 920px) {
+  .grid { display: flex; flex-direction: column; align-items: stretch; }
+  .col { display: contents; }
+  #p-sch { order: 1; } #p-ctl { order: 2; } #p-ins { order: 3; } #p-pha { order: 4; }
+}
+.panel { background: var(--paper); border: 1px solid var(--ink); padding: 16px; min-width: 0; }
+.panel > h2 { font-family: var(--font-head); font-size: 14px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); margin: 0 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.panel h3 { font-family: var(--font-head); font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 18px 0 8px; }
+.scroll { overflow-x: auto; }
+svg { display: block; max-width: 100%; height: auto; }
+#sch { width: 100%; }
+@media (max-width: 760px) { #sch { min-width: 720px; } }
+svg text { font-family: var(--font-mono); font-size: 13px; fill: var(--ink); }
+svg .lbl { fill: var(--muted); }
+svg .b { font-weight: 500; }
+.w { fill: none; stroke: var(--ink); stroke-width: 1.5; }
+.dot { fill: var(--ink); }
+.meter { fill: var(--paper); stroke: var(--ink); stroke-width: 1.5; }
+.src { fill: var(--paper); stroke-width: 2; }
+.plate { stroke: var(--ink); stroke-width: 2; fill: none; }
+.lamp { cursor: pointer; }
+.lamp circle { stroke-width: 1.5; }
+.lamp path { stroke: var(--muted); stroke-width: 1; fill: none; }
+.lamp:focus-visible circle { stroke: var(--accent); stroke-width: 3.5; }
+.defs { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px 20px; margin: 14px 0 0; font-size: 13px; color: var(--muted); }
+.defs b { display: block; color: var(--ink); font-weight: 500; }
+.defs code { font-family: var(--font-mono); color: var(--accent); font-size: 13px; }
+.ls { display: inline-block; width: 26px; border-top: 3px solid var(--ink); vertical-align: middle; margin-right: 6px; }
+.ls1 { border-top-color: var(--l1); }
+.ls2 { border-top-color: var(--l2); }
+.ls3 { border-top-color: var(--l3); }
+.lsn { border-top-color: var(--accent); border-top-style: dashed; }
+.ph { border: 1px solid var(--line); padding: 10px 12px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; }
+.ph-head { display: flex; align-items: center; font-family: var(--font-mono); }
+.ph-head .dot-sw { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+.ph-head output { margin-left: auto; font-size: 15px; }
+.row { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 8px; align-items: center; font-size: 13px; color: var(--muted); }
+.seg { display: flex; gap: 4px; min-width: 0; }
+.seg button { flex: 1; min-width: 0; padding-inline: 4px; }
+input[type=range] { width: 100%; min-width: 0; accent-color: var(--accent); }
+input[type=checkbox] { accent-color: var(--accent); }
+button { font: inherit; font-size: 13px; color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: 3px; padding: 6px 8px; cursor: pointer; line-height: 1.2; }
+button:hover { border-color: var(--muted); }
+button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.check { display: flex; align-items: center; gap: 8px; font-size: 14px; margin: 4px 0; }
+.presets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+table { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 13px; font-variant-numeric: tabular-nums; }
+th { text-align: right; font-weight: 500; color: var(--muted); font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; padding: 0 8px 6px 0; white-space: nowrap; }
+td { text-align: right; padding: 7px 8px 7px 0; border-top: 1px solid var(--line); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+td.bad { color: var(--warn); font-weight: 500; }
+.eq { font-family: var(--font-ui); }
+.eq th, .eq td { text-align: left; white-space: normal; padding-right: 12px; vertical-align: top; }
+.eq td.num { font-family: var(--font-mono); }
+.eq td.live { font-family: var(--font-mono); color: var(--accent); }
+.glasses { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 8px; }
+.glass { background: var(--glass); color: var(--glass-ink); border: 1px solid var(--ink); border-radius: 3px; padding: 8px 10px; min-width: 0; }
+.gl { display: block; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--glass-dim); }
+.gv b { font-family: var(--font-mono); font-size: 23px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.gv i { font-style: normal; font-size: 13px; color: var(--glass-dim); margin-left: 4px; }
+.gv.big b { font-size: 34px; }
+.wsel { display: flex; gap: 4px; margin-top: 8px; }
+.wsel button { flex: 1; min-width: 0; color: var(--glass-ink); border-color: var(--glass-dim); }
+.wsel button:hover { border-color: var(--glass-ink); }
+.wsel button[aria-pressed="true"] { color: var(--on-accent); border-color: var(--accent); }
+.wsub { font-family: var(--font-mono); font-size: 12px; color: var(--glass-dim); margin-top: 2px; }
+.ratio { font-size: 13px; color: var(--muted); margin: 8px 0 0; }
+.ratio b { font-family: var(--font-mono); color: var(--ink); font-weight: 500; }
+.alerts { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.alerts:empty { display: none; }
+.alert { font-size: 13px; padding: 8px 10px; border-left: 3px solid var(--accent); background: var(--info-bg); }
+.alert.warn { border-left-color: var(--warn); background: var(--warn-bg); color: var(--warn); }
+.phasors { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+.phasors figure { margin: 0; min-width: 0; }
+.phasors figcaption { font-family: var(--font-head); font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.phasors svg { width: 100%; max-width: 300px; margin: 0 auto; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-family: var(--font-mono); font-size: 12px; color: var(--muted); margin-top: 6px; }
+.hint { font-size: 13px; color: var(--muted); margin: 10px 0 0; }
+.note { font-size: 13px; color: var(--muted); max-width: 84ch; margin: 0; }
+.plotbar { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; }
+.chips button { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono); }
+.chips button .ls { margin: 0; width: 22px; }
+.chips button[aria-pressed="true"] { background: var(--info-bg); color: var(--ink); border-color: var(--accent); }
+.chips button[aria-pressed="false"] { opacity: 0.55; }
+#plot { width: 100%; min-width: 560px; touch-action: pan-y; cursor: crosshair; }
+#plot .g { stroke: var(--line); stroke-width: 1; fill: none; }
+#plot .z { stroke: var(--muted); stroke-width: 1.5; fill: none; }
+#plot .ax { fill: var(--muted); font-size: 12px; }
+#plot .tr { fill: none; stroke-linejoin: round; stroke-width: 2.2; }
+#plot .tr1 { stroke: var(--l1); }
+#plot .tr2 { stroke: var(--l2); }
+#plot .tr3 { stroke: var(--l3); }
+#plot .trn { stroke: var(--accent); stroke-width: 3; }
+#plot .cur { stroke: var(--ink); stroke-width: 1; stroke-dasharray: 3 3; }
+.cmp td, .cmp th { padding-right: 10px; vertical-align: middle; }
+input.num, select { font-family: var(--font-mono); font-size: 14px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 3px; padding: 5px 8px; width: 96px; min-width: 0; }
+select { width: auto; }
+.inl { display: flex; align-items: center; gap: 6px; }
+.calgrid { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.calgrid label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+.summary { font-family: var(--font-mono); font-size: 13px; margin: 0 0 10px; }
+.rlbox { margin: 10px 0 8px; }
+.pread { font-family: var(--font-mono); font-size: 13px; min-height: 1.6em; margin: 8px 0 0; overflow-wrap: anywhere; }
+</style>
+
+<div class="wrap">
+  <header class="head">
+    <div>
+      <p class="kicker">Лабораторийн симулятор</p>
+      <h1>Гурван фазын од холбоо</h1>
+      <p class="lede">Автотрансформатороос тэжээгдэх, нойтралтай гурван фазын ачааллыг лабораторийн багажаар хэмжинэ. Хэмжилтийг цаг хугацааны симуляциар хийж, долгионыг график дээр харуулна.</p>
+    </div>
+    <div class="tblock" aria-label="Схемийн үндсэн өгөгдөл">
+      <span>Холбоо</span><span>Y, нойтралтай</span>
+      <span>Фазын хүчдэл</span><span>220 В, 50 Гц</span>
+      <span>Ачаалал</span><span>9 чийдэн</span>
+    </div>
+  </header>
+
+  <ol class="steps">
+    <li>Автотрансформаторын гаралтын хүчдэлийг тохируулна.</li>
+    <li>Фаз бүрт чийдэн (25 Вт) болон конденсатор (1; 2,2; 4,7 мкФ) холбоно.</li>
+    <li>Багажны заалтыг харж, долгионы графикаар шалгана. Нойтралыг салгаж үзнэ.</li>
+  </ol>
+
+  <div class="grid">
+    <div class="col">
+      <section class="panel" id="p-sch">
+        <h2>Схем</h2>
+        <div class="scroll">
+          <svg id="sch" viewBox="0 0 820 470" role="img" aria-label="Гурван фазын од холбоотой ачааллын схем. Багажны заалт шууд шинэчлэгдэнэ.">
+            <g id="rows"></g>
+            <g id="nw">
+              <path class="w" d="M760 140V425H400M370 425H30V70"/>
+            </g>
+            <circle class="meter" cx="385" cy="425" r="15"/>
+            <text class="b" x="385" y="425" text-anchor="middle" dominant-baseline="central">A</text>
+            <text id="t0" x="385" y="456" text-anchor="middle"></text>
+            <text class="lbl" x="30" y="52" text-anchor="middle">0</text>
+            <text class="lbl" x="760" y="122" text-anchor="middle">0′</text>
+            <circle class="dot" cx="30" cy="190" r="3"/><circle class="dot" cx="30" cy="310" r="3"/>
+            <circle class="dot" cx="760" cy="260" r="3"/><circle class="dot" cx="760" cy="380" r="3"/>
+          </svg>
+        </div>
+        <p class="hint">Чийдэн дээр дарж асаана, унтраана (шар дугуй нь асаалттай). PA1–PA3 нь фазын гүйдлийг хэмжинэ. Од холбоонд шугамын гүйдэл фазын гүйдэлтэй тэнцүү. PV1–PV3 нь фазын хүчдэл, PV4–PV6 нь шугамын хүчдэл. PA0 нь нойтрал утасны гүйдэл.</p>
+        <div class="defs">
+          <div><b>Фазын хүчдэл Uф</b>Фаз ба нойтралын хооронд. Энд <code>220 В</code>.</div>
+          <div><b>Шугамын хүчдэл Uл</b>Хоёр фазын хооронд. <code>Uл = √3 · Uф ≈ 380 В</code>.</div>
+          <div><b>Фазын гүйдэл Iф</b>Од холбоонд шугамын гүйдэлтэй тэнцүү: <code>Iл = Iф</code>.</div>
+          <div><b>Нойтралын гүйдэл I₀</b>Гурван фазын гүйдлийн нийлбэр. Тэнцвэртэй үед <code>0</code>.</div>
+        </div>
+      </section>
+
+      <section class="panel" id="p-pha">
+        <h2>Вектор диаграм</h2>
+        <div class="phasors">
+          <figure>
+            <figcaption>Хүчдэл</figcaption>
+            <svg viewBox="0 0 240 240" role="img" aria-label="Фазын болон шугамын хүчдэлийн векторууд">
+              <defs>
+                <marker id="mv1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--l1)"/></marker>
+                <marker id="mv2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--l2)"/></marker>
+                <marker id="mv3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--l3)"/></marker>
+              </defs>
+              <g id="gv"></g>
+            </svg>
+            <div class="legend"><span><i class="ls ls1"></i>Ua</span><span><i class="ls ls2"></i>Ub</span><span><i class="ls ls3"></i>Uc</span></div>
+          </figure>
+          <figure>
+            <figcaption>Гүйдэл</figcaption>
+            <svg viewBox="0 0 240 240" role="img" aria-label="Фазын гүйдэл болон нойтралын гүйдлийн векторууд">
+              <defs>
+                <marker id="mi1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--l1)"/></marker>
+                <marker id="mi2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--l2)"/></marker>
+                <marker id="mi3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--l3)"/></marker>
+                <marker id="mi0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--accent)"/></marker>
+              </defs>
+              <g id="gi"></g>
+            </svg>
+            <div class="legend"><span><i class="ls ls1"></i>I1</span><span><i class="ls ls2"></i>I2</span><span><i class="ls ls3"></i>I3</span><span><i class="ls lsn"></i>I₀</span></div>
+          </figure>
+        </div>
+        <p class="hint">Хүчдэлийн диаграмд фазын хүчдэл нойтрал цэгээс (N′) эхэлнэ. Нойтралыг салгавал N′ цэг шилжинэ. Конденсатор холбовол гүйдэл хүчдлээс түрүүлнэ.</p>
+      </section>
+    </div>
+
+    <div class="col">
+      <section class="panel" id="p-ctl">
+        <h2>Тохируулга</h2>
+        <div id="ctls"></div>
+        <div class="ph rlbox">
+          <div class="row"><span>Чийдэн</span><div class="seg" role="group" aria-label="Чийдэнгийн загвар">
+            <button type="button" data-lm="real" aria-pressed="false">Бодит (халдаг)</button>
+            <button type="button" data-lm="fixed" aria-pressed="true">Тогтмол Ом</button>
+          </div></div>
+          <div class="row"><span>Тогтмол R</span><div class="inl"><input type="text" inputmode="decimal" id="rfix" class="num" value="1000" aria-label="Чийдэнгийн тогтмол эсэргүүцэл"> Ом</div></div>
+          <div class="row"><span>Тэжээл Rs</span><div class="inl"><input type="text" inputmode="decimal" id="rs" class="num" value="0.11" aria-label="Тэжээлийн дотоод эсэргүүцэл"> Ом</div></div>
+          <div class="hint" id="rlnote" style="margin:0"></div>
+        </div>
+        <label class="check"><input type="checkbox" id="link" checked> Гурван фазын хүчдэлийг хамт өөрчлөх</label>
+        <label class="check"><input type="checkbox" id="nchk" checked> Нойтрал утас холбогдсон (0–0′)</label>
+        <div class="presets">
+          <button type="button" data-preset="bal">Тэнцвэртэй</button>
+          <button type="button" data-preset="unb">Тэнцвэргүй 3/2/1</button>
+          <button type="button" data-preset="one">Нэг фаз</button>
+          <button type="button" data-preset="open">Нойтрал тасарсан</button>
+          <button type="button" data-preset="cap">Ёмкостийн ачаалал</button>
+          <button type="button" data-preset="lab-open">А фаз тасарсан</button>
+          <button type="button" data-preset="lab-asym">Симметр бус 1/2/3</button>
+          <button type="button" data-preset="lab-short">А фаз богино</button>
+        </div>
+      </section>
+
+      <section class="panel" id="p-ins">
+        <h2>Багажны заалт</h2>
+        <div class="alerts" id="alerts" aria-live="polite"></div>
+
+        <h3 style="margin-top:0">Фаз бүрийн хэмжилт</h3>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>Фаз</th><th>Uф, В</th><th>Iф=Iл, А</th><th>P, Вт</th><th>Q, вар</th><th>cosφ</th></tr></thead>
+            <tbody id="tb"></tbody>
+          </table>
+        </div>
+
+        <h3>Шугамын хүчдэл Uл</h3>
+        <div class="glasses">
+          <div class="glass"><span class="gl">PV4 · L1–L2</span><span class="gv"><b id="g4">0</b><i>В</i></span></div>
+          <div class="glass"><span class="gl">PV5 · L2–L3</span><span class="gv"><b id="g5">0</b><i>В</i></span></div>
+          <div class="glass"><span class="gl">PV6 · L3–L1</span><span class="gv"><b id="g6">0</b><i>В</i></span></div>
+        </div>
+        <p class="ratio">Uл / Uф = <b id="ratio">—</b> (тэнцвэртэй үед √3 = 1,7321)</p>
+
+        <h3>Нойтрал</h3>
+        <div class="glasses">
+          <div class="glass"><span class="gl">PA0 · I₀</span><span class="gv"><b id="gi0">0</b><i>А</i></span></div>
+          <div class="glass"><span class="gl">Нойтралын шилжилт</span><span class="gv"><b id="gun">0</b><i>В</i></span></div>
+        </div>
+
+        <h3>Ваттметр DGJ-07-2</h3>
+        <div class="glass">
+          <span class="gl" id="wlabel">Нийт чадал</span>
+          <span class="gv big"><b id="gw">0</b><i>Вт</i></span>
+          <div class="wsub" id="wsub"></div>
+          <div class="wsel" role="group" aria-label="Ваттметрийн хэмжих фаз">
+            <button type="button" data-w="0" aria-pressed="false">L1</button>
+            <button type="button" data-w="1" aria-pressed="false">L2</button>
+            <button type="button" data-w="2" aria-pressed="false">L3</button>
+            <button type="button" data-w="3" aria-pressed="true">Нийт</button>
+          </div>
+        </div>
+        <p class="hint">Хэмжилтийг цаг хугацааны симуляциар (Δt = 10 мкс, BDF2) хийж, сүүлийн 5 мөчлөгийн RMS авна. Энэ нь LTspice-ийн <code style="font-family:var(--font-mono)">.meas RMS</code> -тэй ижил арга.</p>
+      </section>
+    </div>
+  </div>
+
+  <section class="panel" id="p-cal">
+    <h2>Лабын хэмжилттэй тааруулах</h2>
+    <p class="hint" style="margin-top:0">Бодит чийдэн халах тусам эсэргүүцэл нь өөрчлөгддөг тул лабын тоо идеал тооцооноос зөрж болно. Нэг фаз дээр хэмжсэн хүчдэл, гүйдлээ оруулбал чийдэнгийн эсэргүүцэл гарна.</p>
+    <div class="calgrid">
+      <label>Фазын хүчдэл, В <input type="text" inputmode="decimal" id="cu" class="num" value="220"></label>
+      <label>Фазын гүйдэл, А <input type="text" inputmode="decimal" id="ci" class="num" placeholder="0,341"></label>
+      <label>Тухайн фазын чийдэн <select id="cn"><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option></select></label>
+      <button type="button" id="cuse">Тогтмол R болгож ашиглах</button>
+    </div>
+    <p class="summary" id="cout" style="margin-top:12px"></p>
+    <h3>Хэмжсэн утгатайгаа харьцуулах</h3>
+    <p class="hint" style="margin-top:0">Схемийг лабын нөхцөлтэй адилхан тохируулаад хэмжсэн утгаа оруулна. Зөрүү шууд гарна.</p>
+    <div class="scroll">
+      <table class="cmp">
+        <thead><tr><th>Хэмжигдэхүүн</th><th>Симулятор</th><th>Таны хэмжилт</th><th>Зөрүү</th></tr></thead>
+        <tbody id="mtb"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel" id="p-plot">
+    <h2>Долгионы график</h2>
+    <div class="plotbar" id="pgroups" role="group" aria-label="Графикийн төрөл">
+      <button type="button" data-pg="uph" aria-pressed="true">Фазын хүчдэл</button>
+      <button type="button" data-pg="ul" aria-pressed="false">Шугамын хүчдэл</button>
+      <button type="button" data-pg="iph" aria-pressed="false">Фазын гүйдэл</button>
+      <button type="button" data-pg="i0" aria-pressed="false">Нойтралын гүйдэл</button>
+      <button type="button" data-pg="pw" aria-pressed="false">Чадал p(t)</button>
+    </div>
+    <div class="scroll">
+      <svg id="plot" viewBox="0 0 820 340" role="img" aria-label="Сонгосон дохионы долгионы график">
+        <g id="pgrid"></g>
+        <g id="ptr"></g>
+        <line id="pcur" class="cur" x1="0" y1="14" x2="0" y2="300" visibility="hidden"/>
+      </svg>
+    </div>
+    <div class="chips" id="pchips"></div>
+    <p class="pread" id="pread">Графикийн дээр хулганаа аваачвал тухайн агшны утга харагдана.</p>
+    <h3>Хэмжилт (сүүлийн 100 мс-ийн цонх)</h3>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Дохио</th><th>RMS</th><th>Max</th><th>Min</th><th>Дундаж</th></tr></thead>
+        <tbody id="ptb"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel" id="p-eq">
+    <h2>Ашиглагдах тоног төхөөрөмж</h2>
+    <div class="scroll">
+      <table class="eq">
+        <thead><tr><th>№</th><th>Багаж</th><th>Хэмжээ</th><th>Тоо</th><th>Блок</th><th>Одоо</th></tr></thead>
+        <tbody>
+          <tr><td class="num">1</td><td>АС вольтметр</td><td class="num">0–500 В</td><td class="num">1</td><td></td><td class="live" id="e1"></td></tr>
+          <tr><td class="num">2</td><td>АС амперметр</td><td class="num">0–5 А</td><td class="num">1</td><td></td><td class="live" id="e2"></td></tr>
+          <tr><td class="num">3</td><td>Ваттметр</td><td></td><td class="num">1</td><td class="num">DGJ-07-2</td><td class="live" id="e3"></td></tr>
+          <tr><td class="num">4</td><td>3 фазын автотрансформатор</td><td></td><td class="num">1</td><td></td><td class="live" id="e4"></td></tr>
+          <tr><td class="num">5</td><td>3 фазын ачаалал (чийдэн)</td><td class="num">220 В, 25 Вт</td><td class="num">9</td><td class="num">DGJ-04</td><td class="live" id="e5"></td></tr>
+          <tr><td class="num">6</td><td>3 фазын багтаамжийн ачаалал</td><td class="num">1 мкФ, 2,2 мкФ, 4,7 мкФ, 500 В</td><td class="num">тус бүр 3</td><td class="num">DGJ-05</td><td class="live" id="e6"></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="hint">Лабораторид нэг вольтметр, нэг амперметр байдаг тул хэмжилтийг фаз бүр дээр ээлжлэн хийнэ. Симулятор бүх хэмжилтийг нэг дор харуулна.</p>
+  </section>
+
+  <p class="note">Загвар: 25 Вт, 220 В чийдэн 220 В үед 1936 Ом, хүчдэл буурахад R ∝ U^0,4 хуулиар буурна (ойролцоо загвар). Тэжээл болон багаж идеал, нойтрал утасны эсэргүүцэл, гармоникийг тооцоогүй. Тиймээс бодит хэмжилтээс зөрж болох ба «Лабын хэмжилттэй тааруулах» хэсгээр засна.</p>
+</div>
+
+<script>
+var CV = [1, 2.2, 4.7], RS = 0.11, R220 = 1936;
+var names = ['L1', 'L2', 'L3'];
+var ang = [0, -2 * Math.PI / 3, 2 * Math.PI / 3];
+var st = { u: [220, 220, 220], n: [3, 3, 3], caps: [[0, 0, 0], [0, 0, 0], [0, 0, 0]], mode: ['ok', 'ok', 'ok'], neutral: true, link: true, w: 3, lamp: 'fixed', rfix: 1000, pg: 'uph', vis: {} };
+var $ = function (id) { return document.getElementById(id); };
+var i, j, k;
+
+function f(x, d) {
+  var m = Math.pow(10, d);
+  if (Math.abs(x) < 0.5 / m) x = 0;
+  return x.toFixed(d).replace('.', ',').replace('-', '−');
+}
+function cadd(a, b) { return [a[0] + b[0], a[1] + b[1]]; }
+function csub(a, b) { return [a[0] - b[0], a[1] - b[1]]; }
+function cmul(a, b) { return [a[0] * b[0] - a[1] * b[1], a[0] * b[1] + a[1] * b[0]]; }
+function cdiv(a, b) { var d = b[0] * b[0] + b[1] * b[1]; return [(a[0] * b[0] + a[1] * b[1]) / d, (a[1] * b[0] - a[0] * b[1]) / d]; }
+function cabs(a) { return Math.sqrt(a[0] * a[0] + a[1] * a[1]); }
+function niceCeil(x) {
+  var list = [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10];
+  var p = Math.pow(10, Math.floor(Math.log10(x))), m = x / p;
+  for (var q = 0; q < list.length; q++) if (m <= list[q] + 1e-9) return list[q] * p;
+  return 10 * p;
+}
+
+var DT = 1e-5, NT = 30000, NW = 10000, N0 = NT - NW, NP = 4000;
+var SIN = [];
+for (k = 0; k < 3; k++) {
+  SIN.push(new Float64Array(NT + 1));
+  for (j = 0; j <= NT; j++) SIN[k][j] = Math.SQRT2 * Math.sin(2 * Math.PI * 50 * j * DT + ang[k]);
+}
+var B = { vl: [], vp: [], il: [], ul: [], p: [], vn: new Float64Array(NW), i0: new Float64Array(NW), pt: new Float64Array(NW) };
+for (k = 0; k < 3; k++) { B.vl.push(new Float64Array(NW)); B.vp.push(new Float64Array(NW)); B.il.push(new Float64Array(NW)); B.ul.push(new Float64Array(NW)); B.p.push(new Float64Array(NW)); }
+
+function capsum(a) { var C = 0; for (var q = 0; q < 3; q++) if (st.caps[a][q]) C += CV[q]; return C; }
+
+function lampR(U) {
+  if (st.lamp === 'fixed') return st.rfix;
+  var x = Math.max(U, 0.01) / 220;
+  return Math.max(R220 / 14, R220 * Math.pow(x, 0.4));
+}
+function lampRs() {
+  if (st.lamp === 'fixed') return [st.rfix, st.rfix, st.rfix];
+  var R = [R220, R220, R220], Cs = [capsum(0), capsum(1), capsum(2)], it, q;
+  for (it = 0; it < 300; it++) {
+    var r = phasorSolve(st.u, st.n, Cs, st.mode, st.neutral, R), mx = 0;
+    for (q = 0; q < 3; q++) {
+      if (st.mode[q] === 'ok' && st.n[q] > 0) {
+        var nr = R[q] + 0.5 * (lampR(cabs(r.Vl[q])) - R[q]);
+        mx = Math.max(mx, Math.abs(nr - R[q]) / R[q]);
+        R[q] = nr;
+      }
+    }
+    if (mx < 1e-11) break;
+  }
+  return R;
+}
+
+function simulate(Rk) {
+  Rk = Rk || lampRs();
+  var G = [], Cc = [], Rser = [], s, q, vb1 = [0, 0, 0], vb2 = [0, 0, 0], E = [0, 0, 0], Yt = [0, 0, 0], hp = [0, 0, 0];
+  for (q = 0; q < 3; q++) { G[q] = st.n[q] / Rk[q]; Cc[q] = capsum(q) * 1e-6; Rser[q] = st.mode[q] === 'short' ? Math.max(RS, 0.001) : RS; }
+  for (s = 1; s <= NT; s++) {
+    var be = (s === 1), sY = 0, sYE = 0, sH = 0;
+    for (q = 0; q < 3; q++) {
+      E[q] = st.u[q] * SIN[q][s];
+      var md = st.mode[q];
+      if (md === 'open') { Yt[q] = 0; hp[q] = 0; }
+      else if (md === 'short') { Yt[q] = 1 / Rser[q]; hp[q] = 0; }
+      else {
+        var gc = be ? Cc[q] / DT : 1.5 * Cc[q] / DT;
+        var hh = be ? Cc[q] / DT * vb1[q] : Cc[q] / (2 * DT) * (4 * vb1[q] - vb2[q]);
+        var yeq = G[q] + gc, d = 1 + Rser[q] * yeq;
+        Yt[q] = yeq / d; hp[q] = hh / d;
+      }
+      sY += Yt[q]; sYE += Yt[q] * E[q]; sH += hp[q];
+    }
+    var vn = (!st.neutral && sY > 0) ? (sYE - sH) / sY : 0;
+    var idx = s - N0 - 1, tot = 0;
+    for (q = 0; q < 3; q++) {
+      var cur = st.mode[q] === 'open' ? 0 : Yt[q] * (E[q] - vn) - hp[q];
+      var vb = E[q] - vn - Rser[q] * cur;
+      if (st.mode[q] === 'ok') { vb2[q] = vb1[q]; vb1[q] = vb; } else { vb1[q] = 0; vb2[q] = 0; }
+      if (idx >= 0) { B.vl[q][idx] = vb; B.vp[q][idx] = E[q] - Rser[q] * cur; B.il[q][idx] = cur; }
+      tot += cur;
+    }
+    if (idx >= 0) { B.vn[idx] = vn; B.i0[idx] = st.neutral ? tot : 0; }
+  }
+  var M = { U: [], I: [], P: [], Q: [], S: [], PF: [], UL: [] }, Pt = 0, Qt = 0;
+  for (j = 0; j < NW; j++) {
+    var tp = 0;
+    for (q = 0; q < 3; q++) { var pp = B.vl[q][j] * B.il[q][j]; B.p[q][j] = pp; tp += pp; }
+    B.pt[j] = tp;
+    B.ul[0][j] = B.vp[0][j] - B.vp[1][j]; B.ul[1][j] = B.vp[1][j] - B.vp[2][j]; B.ul[2][j] = B.vp[2][j] - B.vp[0][j];
+  }
+  for (q = 0; q < 3; q++) {
+    var u = stat(B.vl[q]).rms, ii = stat(B.il[q]).rms, p = stat(B.p[q]).mean, S = u * ii;
+    var Qm = Math.sqrt(Math.max(0, S * S - p * p)), Qs = (capsum(q) > 0 && st.mode[q] === 'ok') ? -Qm : 0;
+    M.U.push(u); M.I.push(ii); M.P.push(p); M.S.push(S); M.Q.push(Qs);
+    M.PF.push(S > 1e-6 ? p / S : null);
+    M.UL.push(stat(B.ul[q]).rms);
+    Pt += p; Qt += Qs;
+  }
+  M.Pt = Pt; M.Qt = Qt; M.I0 = stat(B.i0).rms; M.shift = stat(B.vn).rms;
+  return M;
+}
+function stat(a) {
+  var s = 0, s2 = 0, mx = -Infinity, mn = Infinity, x;
+  for (var q = 0; q < a.length; q++) { x = a[q]; s += x; s2 += x * x; if (x > mx) mx = x; if (x < mn) mn = x; }
+  return { mean: s / a.length, rms: Math.sqrt(s2 / a.length), max: mx, min: mn };
+}
+
+function phasorSolve(u, n, Cs, mode, neutral, Rk) {
+  var w = 2 * Math.PI * 50, Es = [], Yt = [], Rser = [], q;
+  for (q = 0; q < 3; q++) {
+    Es.push([u[q] * Math.cos(ang[q]), u[q] * Math.sin(ang[q])]);
+    Rser.push(mode[q] === 'short' ? Math.max(RS, 0.001) : RS);
+    if (mode[q] === 'open') Yt.push([0, 0]);
+    else if (mode[q] === 'short') Yt.push([1 / Rser[q], 0]);
+    else { var Y = [n[q] / Rk[q], w * Cs[q] * 1e-6]; Yt.push(cdiv(Y, [1 + Rser[q] * Y[0], Rser[q] * Y[1]])); }
+  }
+  var VN = [0, 0];
+  if (!neutral) {
+    var ys = [0, 0], num = [0, 0];
+    for (q = 0; q < 3; q++) { ys = cadd(ys, Yt[q]); num = cadd(num, cmul(Yt[q], Es[q])); }
+    if (cabs(ys) > 1e-12) VN = cdiv(num, ys);
+  }
+  var Vl = [], I = [], sum = [0, 0];
+  for (q = 0; q < 3; q++) {
+    var cur = cmul(Yt[q], csub(Es[q], VN));
+    I.push(cur); sum = cadd(sum, cur);
+    Vl.push(csub(csub(Es[q], VN), [Rser[q] * cur[0], Rser[q] * cur[1]]));
+  }
+  return { Es: Es, VN: VN, Vl: Vl, I: I, I0v: neutral ? sum : [0, 0] };
+}
+function compute(Rk) {
+  Rk = Rk || lampRs();
+  var Cs = [capsum(0), capsum(1), capsum(2)];
+  var r = phasorSolve(st.u, st.n, Cs, st.mode, st.neutral, Rk);
+  return { Vs: r.Es, VN: r.VN, Vl: r.Vl, I: r.I, I0v: r.I0v, I0: cabs(r.I0v) };
+}
+
+var h = '';
+var PY = [70, 190, 310], LX = [430, 475, 520], CX = 565, PVX = 630;
+for (i = 0; i < 3; i++) {
+  var py = PY[i], ry = py + 70, my = py + 35;
+  h += '<rect class="src" x="56" y="' + (py - 22) + '" width="80" height="44" rx="3" style="stroke:var(--l' + (i + 1) + ')"/>';
+  h += '<text class="b" x="96" y="' + (py - 5) + '" text-anchor="middle">' + names[i] + ' · ЛАТР</text>';
+  h += '<text id="vs' + i + '" x="96" y="' + (py + 13) + '" text-anchor="middle"></text>';
+  h += '<text id="ms' + i + '" x="96" y="' + (py + 40) + '" text-anchor="middle" style="fill:var(--warn);font-weight:500"></text>';
+  h += '<path class="w" d="M30 ' + py + 'H56M136 ' + py + 'H175M205 ' + py + 'H' + PVX + 'M' + LX[0] + ' ' + ry + 'H760"/>';
+  h += '<circle class="meter" cx="190" cy="' + py + '" r="15"/><text class="b" x="190" y="' + py + '" text-anchor="middle" dominant-baseline="central">A</text>';
+  h += '<text class="lbl" x="190" y="' + (py - 26) + '" text-anchor="middle">PA' + (i + 1) + ' · Iф=Iл</text>';
+  h += '<text id="a' + i + '" x="190" y="' + (py + 34) + '" text-anchor="middle"></text>';
+  for (j = 0; j < 3; j++) {
+    var x = LX[j];
+    h += '<path class="w" d="M' + x + ' ' + py + 'V' + (my - 13) + 'M' + x + ' ' + (my + 13) + 'V' + ry + '"/>';
+    h += '<circle class="dot" cx="' + x + '" cy="' + py + '" r="3"/>';
+    if (j > 0) h += '<circle class="dot" cx="' + x + '" cy="' + ry + '" r="3"/>';
+    h += '<g class="lamp" tabindex="0" role="button" aria-label="' + names[i] + ' фазын ' + (j + 1) + '-р чийдэн" data-i="' + i + '" data-j="' + j + '"><circle id="l' + i + j + '" cx="' + x + '" cy="' + my + '" r="13"/><path id="lx' + i + j + '" d="M' + (x - 9) + ' ' + (my - 9) + 'L' + (x + 9) + ' ' + (my + 9) + 'M' + (x + 9) + ' ' + (my - 9) + 'L' + (x - 9) + ' ' + (my + 9) + '"/></g>';
+  }
+  h += '<g id="cap' + i + '"><path class="w" d="M' + CX + ' ' + py + 'V' + (my - 5) + 'M' + CX + ' ' + (my + 5) + 'V' + ry + '"/><path class="plate" d="M' + (CX - 12) + ' ' + (my - 5) + 'H' + (CX + 12) + 'M' + (CX - 12) + ' ' + (my + 5) + 'H' + (CX + 12) + '"/></g>';
+  h += '<circle class="dot" cx="' + CX + '" cy="' + py + '" r="3"/><circle class="dot" cx="' + CX + '" cy="' + ry + '" r="3"/>';
+  h += '<text id="ct' + i + '" class="lbl" x="' + CX + '" y="' + (ry + 20) + '" text-anchor="middle"></text>';
+  h += '<path class="w" d="M' + PVX + ' ' + py + 'V' + (my - 14) + 'M' + PVX + ' ' + (my + 14) + 'V' + ry + '"/>';
+  h += '<circle class="dot" cx="' + PVX + '" cy="' + ry + '" r="3"/>';
+  h += '<circle class="meter" cx="' + PVX + '" cy="' + my + '" r="14"/><text class="b" x="' + PVX + '" y="' + my + '" text-anchor="middle" dominant-baseline="central">V</text>';
+  h += '<text x="' + (PVX + 21) + '" y="' + my + '" dominant-baseline="central"><tspan class="lbl">PV' + (i + 1) + ' </tspan><tspan id="vp' + i + '"></tspan></text>';
+}
+var LV = [[245, 130, 0, 1], [245, 250, 1, 2], [335, 105, 0, 2]];
+for (k = 0; k < 3; k++) {
+  var lx = LV[k][0], ly = LV[k][1], ya = PY[LV[k][2]], yb = PY[LV[k][3]];
+  h += '<path class="w" d="M' + lx + ' ' + ya + 'V' + (ly - 13) + 'M' + lx + ' ' + (ly + 13) + 'V' + yb + '"/>';
+  h += '<circle class="dot" cx="' + lx + '" cy="' + ya + '" r="3"/><circle class="dot" cx="' + lx + '" cy="' + yb + '" r="3"/>';
+  h += '<circle class="meter" cx="' + lx + '" cy="' + ly + '" r="13"/><text class="b" x="' + lx + '" y="' + ly + '" text-anchor="middle" dominant-baseline="central">V</text>';
+  h += '<text class="lbl" x="' + (lx - 19) + '" y="' + ly + '" text-anchor="end" dominant-baseline="central">PV' + (k + 4) + '</text>';
+  h += '<text id="vl' + k + '" x="' + (lx + 19) + '" y="' + ly + '" dominant-baseline="central"></text>';
+}
+$('rows').innerHTML = h;
+
+var ch = '', MODES = [['ok', 'Хэвийн'], ['open', 'Тасарсан'], ['short', 'Богино']];
+for (i = 0; i < 3; i++) {
+  ch += '<div class="ph"><div class="ph-head"><i class="dot-sw" style="background:var(--l' + (i + 1) + ')"></i><b>' + names[i] + '</b><output id="o' + i + '">220 В</output></div>';
+  ch += '<input type="range" id="u' + i + '" min="0" max="250" step="5" value="220" aria-label="' + names[i] + ' автотрансформаторын хүчдэл">';
+  ch += '<div class="row"><span>Чийдэн</span><div class="seg" role="group" aria-label="' + names[i] + ' чийдэний тоо">';
+  for (j = 0; j <= 3; j++) ch += '<button type="button" data-i="' + i + '" data-n="' + j + '" aria-pressed="' + (j === 3) + '">' + j + '</button>';
+  ch += '</div></div><div class="row"><span>Конденсатор</span><div class="seg" role="group" aria-label="' + names[i] + ' конденсатор">';
+  for (k = 0; k < 3; k++) ch += '<button type="button" data-i="' + i + '" data-k="' + k + '" aria-pressed="false">' + String(CV[k]).replace('.', ',') + ' мкФ</button>';
+  ch += '</div></div><div class="row"><span>Төлөв</span><div class="seg" role="group" aria-label="' + names[i] + ' фазын төлөв">';
+  MODES.forEach(function (md) { ch += '<button type="button" data-i="' + i + '" data-m="' + md[0] + '" aria-pressed="' + (md[0] === 'ok') + '">' + md[1] + '</button>'; });
+  ch += '</div></div></div>';
+}
+$('ctls').innerHTML = ch;
+
+var tb = '';
+for (i = 0; i < 3; i++) tb += '<tr><td style="color:var(--l' + (i + 1) + ')">' + names[i] + '</td><td id="tu' + i + '"></td><td id="ti' + i + '"></td><td id="tp' + i + '"></td><td id="tq' + i + '"></td><td id="tc' + i + '"></td></tr>';
+$('tb').innerHTML = tb;
+
+var GROUPS = {
+  uph: { unit: 'В', d: 2, minspan: 2, tr: [['U1', 'vl', 0, 'tr1', 1], ['U2', 'vl', 1, 'tr2', 2], ['U3', 'vl', 2, 'tr3', 3]] },
+  ul: { unit: 'В', d: 2, minspan: 2, tr: [['Uab', 'ul', 0, 'tr1', 1], ['Ubc', 'ul', 1, 'tr2', 2], ['Uca', 'ul', 2, 'tr3', 3]] },
+  iph: { unit: 'А', d: 4, minspan: 0.02, tr: [['I1', 'il', 0, 'tr1', 1], ['I2', 'il', 1, 'tr2', 2], ['I3', 'il', 2, 'tr3', 3]] },
+  i0: { unit: 'А', d: 4, minspan: 0.02, tr: [['I1', 'il', 0, 'tr1', 1], ['I2', 'il', 1, 'tr2', 2], ['I3', 'il', 2, 'tr3', 3], ['I0', 'i0', -1, 'trn', 0]] },
+  pw: { unit: 'Вт', d: 3, minspan: 0.5, tr: [['p1', 'p', 0, 'tr1', 1], ['p2', 'p', 1, 'tr2', 2], ['p3', 'p', 2, 'tr3', 3], ['p', 'pt', -1, 'trn', 0]] }
+};
+function series(t) { var src = B[t[1]]; return t[2] >= 0 ? src[t[2]] : src; }
+function niceStep(x) {
+  var p = Math.pow(10, Math.floor(Math.log10(x))), m = x / p;
+  return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * p;
+}
+var PX0 = 66, PX1 = 804, PYT = 14, PYB = 300;
+
+function buildChips() {
+  var g = GROUPS[st.pg], c = '';
+  if (!st.vis[st.pg]) st.vis[st.pg] = g.tr.map(function () { return true; });
+  g.tr.forEach(function (t, q) {
+    c += '<button type="button" data-tr="' + q + '" aria-pressed="' + st.vis[st.pg][q] + '"><i class="ls ' + (t[4] === 0 ? 'lsn' : 'ls' + t[4]) + '"></i>' + t[0] + '</button>';
+  });
+  $('pchips').innerHTML = c;
+  document.querySelectorAll('#pchips button').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var q = +btn.getAttribute('data-tr');
+      st.vis[st.pg][q] = !st.vis[st.pg][q];
+      btn.setAttribute('aria-pressed', String(st.vis[st.pg][q]));
+      drawPlot();
+    });
+  });
+}
+
+function drawPlot() {
+  var g = GROUPS[st.pg], vis = st.vis[st.pg], lo = 0, hi = 0, j2;
+  g.tr.forEach(function (t, qi) {
+    if (!vis[qi]) return;
+    var a = series(t);
+    for (j2 = 0; j2 <= NP; j2 += 4) { if (a[j2] > hi) hi = a[j2]; if (a[j2] < lo) lo = a[j2]; }
+  });
+  if (hi - lo < g.minspan) { hi = Math.max(hi, g.minspan / 2); lo = Math.min(lo, -g.minspan / 2); }
+  var step = niceStep((hi - lo) / 5);
+  lo = Math.floor(lo / step + 1e-9) * step; hi = Math.ceil(hi / step - 1e-9) * step;
+  var dd = Math.max(0, Math.ceil(-Math.log10(step) - 1e-9));
+  var Y = function (v) { return PYB - (v - lo) / (hi - lo) * (PYB - PYT); };
+  var X = function (ms) { return PX0 + ms / 40 * (PX1 - PX0); };
+  var gh = '';
+  for (var v = lo; v <= hi + step * 0.001; v += step) {
+    gh += '<line class="' + (Math.abs(v) < step * 0.001 ? 'z' : 'g') + '" x1="' + PX0 + '" y1="' + Y(v).toFixed(1) + '" x2="' + PX1 + '" y2="' + Y(v).toFixed(1) + '"/>';
+    gh += '<text class="ax" x="' + (PX0 - 8) + '" y="' + Y(v).toFixed(1) + '" text-anchor="end" dominant-baseline="central">' + f(v, dd) + '</text>';
+  }
+  for (var ms = 0; ms <= 40; ms += 5) {
+    gh += '<line class="g" x1="' + X(ms) + '" y1="' + PYT + '" x2="' + X(ms) + '" y2="' + PYB + '"/>';
+    if (ms % 10 === 0) gh += '<text class="ax" x="' + X(ms) + '" y="' + (PYB + 18) + '" text-anchor="middle">' + ms + '</text>';
+  }
+  gh += '<text class="ax" x="' + PX1 + '" y="' + (PYB + 34) + '" text-anchor="end">t, мс</text>';
+  gh += '<text class="ax" x="' + PX0 + '" y="' + (PYT - 2) + '" text-anchor="start">' + g.unit + '</text>';
+  $('pgrid').innerHTML = gh;
+  var tr = '';
+  g.tr.forEach(function (t, qi) {
+    if (!vis[qi]) return;
+    var a = series(t), d = '';
+    for (j2 = 0; j2 <= NP; j2 += 10) d += (j2 === 0 ? 'M' : 'L') + X(j2 * DT * 1000).toFixed(1) + ' ' + Y(a[j2]).toFixed(1);
+    tr += '<path class="tr ' + t[3] + '" d="' + d + '"/>';
+  });
+  $('ptr').innerHTML = tr;
+  var rows = '';
+  g.tr.forEach(function (t) {
+    var s = stat(series(t)), isP = st.pg === 'pw';
+    rows += '<tr><td>' + t[0] + ', ' + g.unit + '</td><td>' + (isP ? '—' : f(s.rms, g.d)) + '</td><td>' + f(s.max, g.d) + '</td><td>' + f(s.min, g.d) + '</td><td>' + f(s.mean, g.d) + '</td></tr>';
+  });
+  $('ptb').innerHTML = rows;
+  $('pcur').setAttribute('visibility', 'hidden');
+}
+
+function plotMove(e) {
+  var r = $('plot').getBoundingClientRect(), xr = (e.clientX - r.left) / r.width * 820;
+  if (xr < PX0 || xr > PX1) { $('pcur').setAttribute('visibility', 'hidden'); return; }
+  var ix = Math.round((xr - PX0) / (PX1 - PX0) * NP), g = GROUPS[st.pg], vis = st.vis[st.pg];
+  var cx = PX0 + ix / NP * (PX1 - PX0);
+  $('pcur').setAttribute('x1', cx.toFixed(1)); $('pcur').setAttribute('x2', cx.toFixed(1));
+  $('pcur').setAttribute('visibility', 'visible');
+  var txt = 't = ' + f(ix * DT * 1000, 2) + ' мс';
+  g.tr.forEach(function (t, qi) { if (vis[qi]) txt += '  ·  ' + t[0] + ' = ' + f(series(t)[ix], g.d) + ' ' + g.unit; });
+  $('pread').textContent = txt;
+}
+$('plot').addEventListener('pointermove', plotMove);
+$('plot').addEventListener('pointerdown', plotMove);
+$('plot').addEventListener('pointerleave', function () { $('pcur').setAttribute('visibility', 'hidden'); });
+
+function vec(x1, y1, x2, y2, color, mk, dash, width) {
+  return '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) + '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '" stroke="' + color + '" stroke-width="' + (width || 2.5) + '"' + (dash ? ' stroke-dasharray="5 4"' : '') + ' marker-end="url(#' + mk + ')"/>';
+}
+
+function render() {
+  var Rk = lampRs();
+  var M = simulate(Rk), m = compute(Rk), b, lc, q;
+  var onCount = 0, capCount = 0, maxU = 0, maxI = 0;
+  for (i = 0; i < 3; i++) {
+    onCount += st.n[i];
+    for (k = 0; k < 3; k++) capCount += st.caps[i][k] ? 1 : 0;
+    maxI = Math.max(maxI, M.I[i]);
+    maxU = Math.max(maxU, M.U[i], M.UL[i]);
+    $('vs' + i).textContent = st.u[i] + ' В';
+    $('ms' + i).textContent = st.mode[i] === 'open' ? 'тасарсан' : st.mode[i] === 'short' ? 'богино' : '';
+    $('a' + i).textContent = f(M.I[i], 3) + ' А';
+    $('vp' + i).textContent = f(M.U[i], 1) + ' В';
+    $('tu' + i).textContent = f(M.U[i], 2);
+    $('tu' + i).className = (st.mode[i] === 'ok' && st.n[i] > 0 && M.U[i] > 242) ? 'bad' : '';
+    $('ti' + i).textContent = f(M.I[i], 4);
+    $('tp' + i).textContent = f(M.P[i], 3);
+    $('tq' + i).textContent = f(M.Q[i], 3);
+    $('tc' + i).textContent = M.PF[i] === null ? '—' : f(M.PF[i], 4);
+    var Cs = capsum(i);
+    $('cap' + i).style.opacity = Cs > 0 ? '1' : '0.25';
+    $('ct' + i).textContent = Cs > 0 ? f(Cs, 1) + ' мкФ' : '';
+    b = Math.min(1, Math.pow(M.U[i] / 220, 2));
+    for (j = 0; j < 3; j++) {
+      lc = $('l' + i + j);
+      var on = j < st.n[i], xl = $('lx' + i + j);
+      if (on) {
+        lc.style.fill = 'var(--lamp)'; lc.style.fillOpacity = Math.max(0.12, b).toFixed(2);
+        lc.style.stroke = (st.mode[i] === 'ok' && M.U[i] > 242) ? 'var(--warn)' : 'var(--l1)';
+        lc.style.strokeWidth = (st.mode[i] === 'ok' && M.U[i] > 242) ? '3' : '1.5';
+      } else {
+        lc.style.fill = 'var(--paper)'; lc.style.fillOpacity = '1';
+        lc.style.stroke = 'var(--line)'; lc.style.strokeWidth = '1.5';
+      }
+      xl.style.stroke = 'var(--muted)';
+    }
+  }
+  for (k = 0; k < 3; k++) {
+    $('vl' + k).textContent = f(M.UL[k], 1) + ' В';
+    $('g' + (k + 4)).textContent = f(M.UL[k], 2);
+  }
+  $('t0').textContent = 'PA0 ' + f(M.I0, 3) + ' А';
+  $('gi0').textContent = f(M.I0, 4);
+  $('gun').textContent = f(M.shift, 2);
+  var nw = $('nw').firstElementChild;
+  nw.style.strokeDasharray = st.neutral ? 'none' : '6 5';
+  nw.style.opacity = st.neutral ? '1' : '0.4';
+
+  var uf = (M.U[0] + M.U[1] + M.U[2]) / 3, ul = (M.UL[0] + M.UL[1] + M.UL[2]) / 3;
+  $('ratio').textContent = (uf > 0.5 && st.mode.join() === 'ok,ok,ok') ? f(ul / uf, 4) : '—';
+
+  var wp, wq, ws, wpf, wl;
+  if (st.w === 3) { wp = M.Pt; wq = M.Qt; ws = Math.sqrt(wp * wp + wq * wq); wl = 'Нийт чадал'; }
+  else { wp = M.P[st.w]; wq = M.Q[st.w]; ws = M.S[st.w]; wl = names[st.w] + ' фазын чадал'; }
+  wpf = ws > 1e-9 ? wp / ws : null;
+  $('wlabel').textContent = wl;
+  $('gw').textContent = f(wp, 3);
+  $('wsub').textContent = 'Q ' + f(wq, 3) + ' вар · S ' + f(ws, 3) + ' ВА · cosφ ' + (wpf === null ? '—' : f(wpf, 4));
+
+  var al = '';
+  for (i = 0; i < 3; i++) {
+    if (st.mode[i] === 'ok' && st.n[i] > 0 && M.U[i] > 242) al += '<div class="alert warn">! ' + names[i] + ' фазын чийдэнгийн хүчдэл ' + f(M.U[i], 1) + ' В байна. Чийдэнгийн нэрлэсэн хүчдэл 220 В.</div>';
+    if (st.mode[i] === 'open') {
+      al += '<div class="alert">' + names[i] + ' фазын ачаалал салсан (гүйдэл 0). Вольтметр ачааллын салсан үзүүр дээр ' + f(M.U[i], 2) + ' В заана.</div>';
+    }
+    if (st.mode[i] === 'short') {
+      al += '<div class="alert' + (st.neutral ? ' warn' : '') + '">' + (st.neutral ? '! ' : '') + names[i] + ' фаз богино холбогдсон.' + (st.neutral ? ' Нойтрал холбогдсон үед богино холболтын гүйдэл ' + f(M.I[i], 1) + ' А хүрнэ.' : '') + '</div>';
+    }
+  }
+  if (!st.neutral) al += '<div class="alert">Нойтрал утас салсан. Од цэг N′ хөвж, фазын хүчдэл тэнцвэргүй болно.</div>';
+  $('alerts').innerHTML = al;
+
+  $('e1').textContent = 'Дээд заалт ' + f(maxU, 1) + ' В';
+  $('e2').textContent = 'Дээд заалт ' + f(maxI, 3) + ' А';
+  $('e3').textContent = wl + ' ' + f(wp, 2) + ' Вт';
+  $('e4').textContent = st.u.join(' / ') + ' В';
+  $('e5').textContent = onCount + ' / 9 асаалттай';
+  $('e6').textContent = capCount + ' / 9 холбогдсон';
+
+  var vmax = Math.max(st.u[0], st.u[1], st.u[2], cabs(m.VN), 1), ringV = niceCeil(vmax), scV = 88 / ringV;
+  var dV = ringV < 10 ? 2 : ringV < 100 ? 1 : 0;
+  var gvh = '<circle cx="120" cy="120" r="44" fill="none" stroke="var(--line)"/><circle cx="120" cy="120" r="88" fill="none" stroke="var(--line)"/>';
+  gvh += '<line x1="8" y1="120" x2="232" y2="120" stroke="var(--line)"/><line x1="120" y1="8" x2="120" y2="232" stroke="var(--line)"/>';
+  gvh += '<text class="lbl" x="124" y="29" style="font-size:11px">' + f(ringV, dV) + ' В</text>';
+  var tips = [], n0 = [120 + m.VN[0] * scV, 120 - m.VN[1] * scV];
+  for (i = 0; i < 3; i++) tips.push([120 + m.Vs[i][0] * scV, 120 - m.Vs[i][1] * scV]);
+  gvh += '<polygon points="' + tips.map(function (p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' ') + '" fill="none" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="4 4"/>';
+  for (i = 0; i < 3; i++) {
+    gvh += vec(n0[0], n0[1], tips[i][0], tips[i][1], 'var(--l' + (i + 1) + ')', 'mv' + (i + 1), false, 2.5);
+    var dx = tips[i][0] - 120, dy = tips[i][1] - 120, dl = Math.sqrt(dx * dx + dy * dy) || 1;
+    gvh += '<text class="b" x="' + (tips[i][0] + dx / dl * 12).toFixed(1) + '" y="' + (tips[i][1] + dy / dl * 12).toFixed(1) + '" text-anchor="middle" dominant-baseline="central" style="font-size:12px">' + 'ABC'.charAt(i) + '</text>';
+  }
+  gvh += '<circle cx="120" cy="120" r="2.5" fill="var(--ink)"/>';
+  if (cabs(m.VN) > 0.01) gvh += '<circle cx="' + n0[0].toFixed(1) + '" cy="' + n0[1].toFixed(1) + '" r="4" fill="var(--paper)" stroke="var(--accent)" stroke-width="2"/><text class="b" x="' + (n0[0] + 8).toFixed(1) + '" y="' + (n0[1] - 6).toFixed(1) + '" style="font-size:11px">N′</text>';
+  $('gv').innerHTML = gvh;
+
+  var imax = Math.max(cabs(m.I[0]), cabs(m.I[1]), cabs(m.I[2]), m.I0, 0.01), ringI = niceCeil(imax), scI = 88 / ringI;
+  var dI = ringI < 0.1 ? 3 : 2;
+  var gih = '';
+  [0.25, 0.5, 0.75, 1].forEach(function (r) { gih += '<circle cx="120" cy="120" r="' + (r * 88).toFixed(1) + '" fill="none" stroke="var(--line)"/>'; });
+  gih += '<line x1="8" y1="120" x2="232" y2="120" stroke="var(--line)"/><line x1="120" y1="8" x2="120" y2="232" stroke="var(--line)"/>';
+  gih += '<text class="lbl" x="124" y="' + (120 - 44 - 3) + '" style="font-size:11px">' + f(ringI / 2, dI) + ' А</text>';
+  gih += '<text class="lbl" x="124" y="' + (120 - 88 - 3) + '" style="font-size:11px">' + f(ringI, dI) + ' А</text>';
+  for (i = 0; i < 3; i++) {
+    if (cabs(m.I[i]) > 0.0005) gih += vec(120, 120, 120 + m.I[i][0] * scI, 120 - m.I[i][1] * scI, 'var(--l' + (i + 1) + ')', 'mi' + (i + 1), false, 2.5);
+  }
+  if (m.I0 > 0.0005) gih += vec(120, 120, 120 + m.I0v[0] * scI, 120 - m.I0v[1] * scI, 'var(--accent)', 'mi0', true, 3);
+  gih += '<circle cx="120" cy="120" r="2.5" fill="var(--ink)"/>';
+  $('gi').innerHTML = gih;
+
+  var rn = st.lamp === 'fixed' ? 'Тогтмол эсэргүүцэл: ' + f(st.rfix, 1) + ' Ом.' : 'Бодит чийдэн: ' + names.map(function (nm, q) { return nm + ' ' + (st.n[q] > 0 ? Math.round(Rk[q]) : '—'); }).join(', ') + ' Ом (хүчдэл буурахад эсэргүүцэл буурна).';
+  $('rlnote').textContent = rn;
+  updateCal(Rk);
+  updateMeas(M);
+  drawPlot();
+}
+
+function sync() {
+  for (i = 0; i < 3; i++) {
+    $('u' + i).value = st.u[i];
+    $('o' + i).textContent = st.u[i] + ' В';
+  }
+  document.querySelectorAll('button[data-n]').forEach(function (btn) {
+    btn.setAttribute('aria-pressed', String(st.n[+btn.getAttribute('data-i')] === +btn.getAttribute('data-n')));
+  });
+  document.querySelectorAll('button[data-k]').forEach(function (btn) {
+    btn.setAttribute('aria-pressed', String(!!st.caps[+btn.getAttribute('data-i')][+btn.getAttribute('data-k')]));
+  });
+  document.querySelectorAll('button[data-m]').forEach(function (btn) {
+    btn.setAttribute('aria-pressed', String(st.mode[+btn.getAttribute('data-i')] === btn.getAttribute('data-m')));
+  });
+  document.querySelectorAll('button[data-lm]').forEach(function (btn) {
+    btn.setAttribute('aria-pressed', String(st.lamp === btn.getAttribute('data-lm')));
+  });
+  if (document.activeElement !== $('rfix')) $('rfix').value = st.rfix;
+  if (document.activeElement !== $('rs')) $('rs').value = RS;
+  document.querySelectorAll('button[data-w]').forEach(function (btn) {
+    btn.setAttribute('aria-pressed', String(st.w === +btn.getAttribute('data-w')));
+  });
+  $('link').checked = st.link;
+  $('nchk').checked = st.neutral;
+  render();
+}
+
+for (i = 0; i < 3; i++) {
+  (function (p) {
+    $('u' + p).addEventListener('input', function (e) {
+      var v = parseInt(e.target.value, 10);
+      if (st.link) st.u = [v, v, v]; else st.u[p] = v;
+      sync();
+    });
+  })(i);
+}
+document.querySelectorAll('button[data-n]').forEach(function (btn) {
+  btn.addEventListener('click', function () { st.n[+btn.getAttribute('data-i')] = +btn.getAttribute('data-n'); sync(); });
+});
+document.querySelectorAll('button[data-k]').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var a = +btn.getAttribute('data-i'), c = +btn.getAttribute('data-k');
+    st.caps[a][c] = st.caps[a][c] ? 0 : 1;
+    sync();
+  });
+});
+document.querySelectorAll('button[data-m]').forEach(function (btn) {
+  btn.addEventListener('click', function () { st.mode[+btn.getAttribute('data-i')] = btn.getAttribute('data-m'); sync(); });
+});
+document.querySelectorAll('button[data-lm]').forEach(function (btn) {
+  btn.addEventListener('click', function () { st.lamp = btn.getAttribute('data-lm'); sync(); });
+});
+$('rfix').addEventListener('input', function (e) { var v = parseFloat(String(e.target.value).replace(',', '.')); if (v > 0) { st.rfix = v; sync(); } });
+$('rs').addEventListener('input', function (e) { var v = parseFloat(String(e.target.value).replace(',', '.')); RS = v >= 0 ? v : 0; sync(); });
+['cu', 'ci', 'cn'].forEach(function (id) { $(id).addEventListener('input', sync); });
+$('cuse').addEventListener('click', function () {
+  var U = parseFloat(String($('cu').value).replace(',', '.')), I = parseFloat(String($('ci').value).replace(',', '.')), n = +$('cn').value;
+  if (U > 0 && I > 0) { st.lamp = 'fixed'; st.rfix = Math.round(n * U / I * 10) / 10; sync(); }
+});
+document.querySelectorAll('button[data-w]').forEach(function (btn) {
+  btn.addEventListener('click', function () { st.w = +btn.getAttribute('data-w'); sync(); });
+});
+document.querySelectorAll('button[data-pg]').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    st.pg = btn.getAttribute('data-pg');
+    document.querySelectorAll('button[data-pg]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === btn)); });
+    buildChips();
+    drawPlot();
+  });
+});
+function toggleLamp(g) {
+  var a = +g.getAttribute('data-i'), l = +g.getAttribute('data-j');
+  st.n[a] = (st.n[a] === l + 1) ? l : l + 1;
+  sync();
+}
+document.querySelectorAll('.lamp').forEach(function (g) {
+  g.addEventListener('click', function () { toggleLamp(g); });
+  g.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleLamp(g); }
+  });
+});
+$('nchk').addEventListener('change', function (e) { st.neutral = e.target.checked; sync(); });
+$('link').addEventListener('change', function (e) {
+  st.link = e.target.checked;
+  if (st.link) { var v = st.u[0]; st.u = [v, v, v]; }
+  sync();
+});
+document.querySelectorAll('[data-preset]').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var p = btn.getAttribute('data-preset');
+    st.u = [220, 220, 220]; st.link = true; st.neutral = true;
+    st.caps = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+    st.n = [3, 3, 3]; st.mode = ['ok', 'ok', 'ok'];
+    if (p === 'unb') st.n = [3, 2, 1];
+    if (p === 'one') st.n = [3, 0, 0];
+    if (p === 'open') { st.n = [3, 2, 1]; st.neutral = false; }
+    if (p === 'cap') st.caps = [[0, 1, 0], [0, 1, 0], [0, 1, 0]];
+    if (p === 'lab-open') { st.mode = ['open', 'ok', 'ok']; st.neutral = false; }
+    if (p === 'lab-asym') { st.n = [1, 2, 3]; st.neutral = false; }
+    if (p === 'lab-short') { st.mode = ['short', 'ok', 'ok']; st.neutral = false; }
+    sync();
+  });
+});
+
+var MROWS = [['Uф1, В', 2], ['Uф2, В', 2], ['Uф3, В', 2], ['U00′, В', 2], ['I1, А', 3], ['I2, А', 3], ['I3, А', 3]];
+var mt = '';
+MROWS.forEach(function (r, q) {
+  mt += '<tr><td>' + r[0] + '</td><td id="msim' + q + '"></td><td><input type="text" inputmode="decimal" id="mm' + q + '" class="num" aria-label="' + r[0] + ' хэмжсэн утга" placeholder="—"></td><td id="mdif' + q + '">—</td></tr>';
+});
+$('mtb').innerHTML = mt;
+function readNum(id) { return parseFloat(String($(id).value).replace(',', '.')); }
+function updateCal(Rk) {
+  var U = readNum('cu'), I = readNum('ci'), n = +$('cn').value, t = '';
+  if (U > 0 && I > 0) t = 'Таны хэмжилтээр чийдэн бүрийн эсэргүүцэл R = ' + f(n * U / I, 1) + ' Ом.';
+  else t = 'Хүчдэл ба гүйдлээ оруулбал чийдэнгийн эсэргүүцэл гарна.';
+  if (U > 0) {
+    var Rm = st.lamp === 'fixed' ? st.rfix : lampR(U);
+    t += ' Загвар одоо ' + f(U, 1) + ' В дээр ' + n + ' чийдэнд ' + f(n * U / Rm, 4) + ' А гаргана.';
+  }
+  $('cout').textContent = t;
+}
+function updateMeas(M) {
+  var sim = [M.U[0], M.U[1], M.U[2], M.shift, M.I[0], M.I[1], M.I[2]];
+  sim.forEach(function (sv, q) {
+    var d = MROWS[q][1], mv = readNum('mm' + q);
+    $('msim' + q).textContent = f(sv, d);
+    $('mdif' + q).textContent = isFinite(mv) ? f(mv - sv, d) + (sv > 1e-9 ? ' (' + f((mv - sv) / sv * 100, 1) + '%)' : '') : '—';
+  });
+}
+for (k = 0; k < 7; k++) $('mm' + k).addEventListener('input', sync);
+buildChips();
+sync();
+</script>
